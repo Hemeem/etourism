@@ -44,7 +44,7 @@
             </a>
             
             {{-- Perulangan Kategori Paket Tour --}}
-            @foreach(['Pantai', 'Budaya & Sejarah', 'Honeymoon'] as $cat)
+            @foreach(['Reguler', 'Keluarga', 'Honeymoon'] as $cat)
                 <a href="{{ route('paket.tour', array_merge(request()->only('search'), ['category' => $cat])) }}" 
                    class="px-6 py-2.5 rounded-xl text-xs font-black transition-all tracking-wider whitespace-nowrap {{ request('category') === $cat ? 'bg-sky-600 text-white shadow-lg shadow-sky-500/20' : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-400 hover:text-slate-900' }}">
                     {{ $cat }}
