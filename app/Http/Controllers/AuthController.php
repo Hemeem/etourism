@@ -32,7 +32,7 @@ class AuthController extends Controller
                 'string',
                 'email',
                 'max:255',
-                'unique:users',
+                'unique:users,email',
                 'regex:/^[a-zA-Z0-9._%+-]+@gmail\.com$/'
             ],
             
@@ -70,7 +70,7 @@ class AuthController extends Controller
         return redirect()->route('login')->with('success', 'Akun wisatawan Anda berhasil terdaftar! Silakan masuk menggunakan email dan password Anda.');
     }
 
-    // 3. Menampilkan Halaman Login
+    //3. Menampilkan Halaman Login
     public function showLogin()
     {
         if (Auth::check()) {
@@ -86,20 +86,21 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $credentials = $request->validate([
-            'email' => 'required|email',
-            'password' => 'required',
+            'email' => ['required', 'email'],
+            'password' => ['required'],
         ], [
             'email.required' => 'Email wajib diisi.',
+            'email.email' => 'Format email tidak valid.',
             'password.required' => 'Password wajib diisi.',
         ]);
 
         $remember = $request->has('remember');
 
         if (Auth::attempt($credentials, $remember)) {
-            $request->session()->regenerate();
+            $request->session()->regenerate(); 
             
             if (Auth::user()->role === 'admin') {
-                return redirect()->intended('/admin/packages')->with('success', 'Selamat datang kembali, Admin!');
+                return redirect()->intended(route('admin.packages.index'))->with('success', 'Selamat datang kembali, Admin!');
             }
             
             return redirect()->intended('/')->with('success', 'Selamat datang kembali!');
@@ -114,6 +115,7 @@ class AuthController extends Controller
     public function logout(Request $request)
     {
         Auth::logout();
+        
         $request->session()->invalidate();
         $request->session()->regenerateToken();
         

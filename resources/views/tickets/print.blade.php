@@ -20,13 +20,11 @@
             }
             body {
                 background-color: white !important;
-                /* Mengatur margin fisik kertas cetak: 1.5cm atas, memberikan nafas agar tidak mepet */
                 padding: 1.5cm 0 0 0 !important; 
             }
             .ticket-card {
                 border: 1px solid #e2e8f0 !important;
                 box-shadow: none !important;
-                /* Jarak cadangan tambahan antar komponen internal saat dicetak */
                 margin-top: 0.5cm !important; 
             }
             * {

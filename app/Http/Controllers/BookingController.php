@@ -7,10 +7,10 @@ use App\Models\Package;
 use App\Models\Reservation; 
 use Midtrans\Config;
 use Midtrans\Snap;
+use Carbon\Carbon;
 
 class BookingController extends Controller
 {
-    // Mengambil data reservasi dari database jika proses payment redirect berhasil
     public function showBookingForm(Request $request, $id)
     {
         $package = Package::findOrFail($id);
@@ -18,11 +18,10 @@ class BookingController extends Controller
 
         if ($request->has('order_id')) {
             $booking = Reservation::where('order_id', $request->order_id)
-                                  ->where('user_id', auth()->id()) // Validasi keamanan agar user hanya bisa melihat pesanan miliknya
+                                  ->where('user_id', auth()->id())
                                   ->first();
         }
 
-        // Kirim $booking ke view (akan bernilai null jika user baru pertama kali buka form)
         return view('booking', compact('package', 'booking'));
     }
 
@@ -30,24 +29,18 @@ class BookingController extends Controller
     public function process(Request $request, $id)
     {
         $package = Package::findOrFail($id);
-        
-        // 1. Validasi Input Form
         $request->validate([
-            'tour_date' => 'required|date',
-            'pax' => 'required|integer|min:' . ($package->min_pax ?? 1),
+            'tour_date' => 'required|date|after_or_equal:today',
+            'pax'       => 'required|integer|min:' . ($package->min_pax ?? 1),
         ]);
-
-        // 2. Kalkulasi Total Harga & Generate Order ID
         $totalPrice = $package->price * $request->pax;
         $orderId = 'TBB-' . time() . '-' . rand(100, 999); 
-
-        // 3. Konfigurasi Midtrans SDK
+        
         Config::$serverKey = env('MIDTRANS_SERVER_KEY');
         Config::$isProduction = filter_var(env('MIDTRANS_IS_PRODUCTION', false), FILTER_VALIDATE_BOOLEAN);
         Config::$isSanitized = filter_var(env('MIDTRANS_IS_SANITIZED', true), FILTER_VALIDATE_BOOLEAN);
         Config::$is3ds = filter_var(env('MIDTRANS_IS_3DS', true), FILTER_VALIDATE_BOOLEAN);
 
-        // 4. Buat parameter untuk dikirim ke Midtrans
         $params = [
             'transaction_details' => [
                 'order_id' => $orderId,
@@ -72,10 +65,7 @@ class BookingController extends Controller
         ];
 
         try {
-            // 5. Dapatkan Snap Token dari Midtrans
             $snapToken = Snap::getSnapToken($params);
-
-            // 6. Menyimpan data menggunakan model Reservation
             Reservation::create([
                 'user_id'     => auth()->id(),        
                 'package_id'  => $package->id,
@@ -87,7 +77,6 @@ class BookingController extends Controller
                 'status'      => 'unpaid',            
             ]);
 
-            // 7. Berikan respons sukses dalam bentuk JSON ke Frontend
             return response()->json([
                 'success' => true,
                 'snap_token' => $snapToken,
@@ -103,45 +92,123 @@ class BookingController extends Controller
         }
     }
 
-    // Mengubah status pembayaran via request AJAX
-    public function updateStatus(Request $request)
+    public function checkout($order_id)
     {
-        $request->validate([
-            'order_id' => 'required|string',
-            'status' => 'required|string'
-        ]);
+        $reservation = Reservation::where('order_id', $order_id)
+            ->where('user_id', auth()->id())
+            ->firstOrFail();
 
-        // 8. Pencarian data menggunakan model Reservation
-        $booking = Reservation::where('order_id', $request->order_id)->first();
-
-        if ($booking) {
-            $booking->update([
-                'status' => $request->status
-            ]);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Status berhasil diperbarui menjadi ' . $request->status
-            ]);
+        // 1. Jika sudah lunas, langsung arahkan ke profil
+        if ($reservation->status === 'paid') {
+            return redirect()->route('profile')->with('info', 'Pesanan ini sudah dibayar.');
         }
 
-        return response()->json([
-            'success' => false,
-            'message' => 'Data pesanan tidak ditemukan.'
-        ], 404);
+        $createdAt = Carbon::parse($reservation->created_at);
+        $expiredTime = $createdAt->addHours(24);
+
+        if (now()->greaterThan($expiredTime) || in_array($reservation->status, ['cancelled', 'expired'])) {
+            if ($reservation->status !== 'cancelled') {
+                $reservation->update(['status' => 'expired']);
+            }
+
+            return redirect()->route('profile')->with('error', 'Waktu pembayaran untuk pesanan ini telah berakhir/kadaluarsa.');
+        }
+
+        Config::$serverKey = env('MIDTRANS_SERVER_KEY');
+        Config::$isProduction = filter_var(env('MIDTRANS_IS_PRODUCTION', false), FILTER_VALIDATE_BOOLEAN);
+        Config::$isSanitized = filter_var(env('MIDTRANS_IS_SANITIZED', true), FILTER_VALIDATE_BOOLEAN);
+        Config::$is3ds = filter_var(env('MIDTRANS_IS_3DS', true), FILTER_VALIDATE_BOOLEAN);
+
+        if (!$reservation->snap_token) {
+            $params = [
+                'transaction_details' => [
+                    'order_id' => $reservation->order_id,
+                    'gross_amount' => (int) $reservation->total_price,
+                ],
+                'customer_details' => [
+                    'first_name' => auth()->user()->name,
+                    'email' => auth()->user()->email,
+                    'phone' => auth()->user()->phone ?? auth()->user()->no_hp ?? '',
+                ],
+            ];
+
+            try {
+                $snapToken = Snap::getSnapToken($params);
+                $reservation->update(['snap_token' => $snapToken]);
+            } catch (\Exception $e) {
+                return redirect()->route('profile')->with('error', 'Gagal memuat sesi pembayaran: ' . $e->getMessage());
+            }
+        } else {
+            $snapToken = $reservation->snap_token;
+        }
+
+        return view('booking_checkout', compact('reservation', 'snapToken', 'expiredTime'));
     }
 
-    public function downloadTicket($order_id)
+    // Webhook Handler Notification dari Midtrans
+    public function updateStatus(Request $request)
     {
-        // Cari data berdasarkan string order_id yang dikirim dari URL
-        $reservation = Reservation::where('order_id', $order_id)->first();
+        $serverKey = env('MIDTRANS_SERVER_KEY');
+        $orderId = $request->order_id;
+        $statusCode = $request->status_code;
+        $grossAmount = $request->gross_amount;
+        $signatureKey = $request->signature_key;
 
-        // Jika data tidak ditemukan, tampilkan error 404 agar tidak merusak layout
-        if (!$reservation) {
-            abort(404, 'Reservasi tidak ditemukan.');
+        $hashedSignature = hash("sha512", $orderId . $statusCode . $grossAmount . $serverKey);
+        if ($signatureKey && $hashedSignature !== $signatureKey) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid Signature Key. Request ditolak!'
+            ], 403);
+        }
+        
+        $booking = Reservation::where('order_id', $orderId)->first();
+
+        if (!$booking) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data pesanan tidak ditemukan.'
+            ], 404);
+        }
+        
+        $transactionStatus = $request->transaction_status ?? $request->status;
+        $newStatus = $booking->status;
+
+        if (in_array($transactionStatus, ['capture', 'settlement', 'success', 'paid'])) {
+            $newStatus = 'paid';
+        } elseif ($transactionStatus == 'pending') {
+            $newStatus = 'unpaid';
+        } elseif (in_array($transactionStatus, ['deny', 'expire', 'cancel', 'failed'])) {
+            $newStatus = 'cancelled';
         }
 
-        // Return ke view e-ticket Anda
+        $booking->update(['status' => $newStatus]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Status berhasil diperbarui menjadi ' . $newStatus
+        ]);
+    }
+
+    // Mengunduh / Mencetak E-Ticket
+    public function downloadTicket($order_id)
+    {
+        $query = Reservation::where('order_id', $order_id);
+
+        if (auth()->user()->role !== 'admin') {
+            $query->where('user_id', auth()->id());
+        }
+
+        $reservation = $query->first();
+
+        if (!$reservation) {
+            abort(404, 'Reservasi tidak ditemukan atau Anda tidak memiliki akses ke tiket ini.');
+        }
+
+        if ($reservation->status !== 'paid') {
+            return back()->with('error', 'E-Ticket belum dapat diunduh karena pembayaran belum dikonfirmasi.');
+        }
+
         return view('tickets.print', compact('reservation'));
     }
 }

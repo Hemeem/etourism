@@ -6,21 +6,24 @@ use Illuminate\Http\Request;
 use App\Models\Reservation;
 use App\Models\Review;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
+use Illuminate\Http\RedirectResponse;
 
 class ProfileController extends Controller
 {
-    // 1. Menampilkan Halaman Profil & Riwayat Reservasi Wisatawan
-    public function profile()
+    /**
+     * Menampilkan Halaman Profil & Riwayat Reservasi Wisatawan
+     */
+    public function profile(): View
     {
         $user = Auth::user();
         
-        // Mengambil data riwayat dengan batasan 5 data per halaman
+        /** @var \Illuminate\Pagination\LengthAwarePaginator $reservations */
         $reservations = Reservation::with('package')
                                     ->where('user_id', $user->id)
                                     ->latest()
                                     ->paginate(5);
 
-        // Ambil reservation_id dari ulasan yang sudah dibuat
         $reviewedReservationIds = Review::where('user_id', $user->id)
                                         ->whereNotNull('reservation_id')
                                         ->pluck('reservation_id')
@@ -29,8 +32,10 @@ class ProfileController extends Controller
         return view('profile', compact('user', 'reservations', 'reviewedReservationIds'));
     }
 
-    // 2. Menyimpan Ulasan / Review Baru dari Form Wisatawan
-    public function storeReview(Request $request)
+    /**
+     * Menyimpan Ulasan / Review Baru dari Form Wisatawan
+     */
+    public function storeReview(Request $request): RedirectResponse
     {
         $request->validate([
             'reservation_id' => 'required|exists:reservations,id',
@@ -38,6 +43,17 @@ class ProfileController extends Controller
             'rating'         => 'required|integer|min:1|max:5',
             'comment'        => 'required|string|max:1000',
         ]);
+
+        $reservation = Reservation::where('id', $request->reservation_id)
+                                   ->where('user_id', Auth::id())
+                                   ->first();
+
+        if (!$reservation) {
+            return redirect()->back()->with('error', 'Data reservasi tidak valid atau Anda tidak memiliki akses ke pesanan ini!');
+        }
+        if ($reservation->status !== 'paid') {
+            return redirect()->back()->with('error', 'Anda hanya dapat memberikan ulasan pada pesanan yang sudah lunas.');
+        }
 
         $alreadyReviewed = Review::where('user_id', Auth::id())
                                  ->where('reservation_id', $request->reservation_id)
@@ -49,8 +65,8 @@ class ProfileController extends Controller
 
         Review::create([
             'user_id'        => Auth::id(),
-            'reservation_id' => $request->reservation_id,
-            'package_id'     => $request->package_id,
+            'reservation_id' => $reservation->id,
+            'package_id'     => $reservation->package_id, 
             'rating'         => $request->rating,
             'comment'        => $request->comment,
             'status'         => 'pending',

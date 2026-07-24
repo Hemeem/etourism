@@ -3,6 +3,20 @@
 @section('title', 'Daftar Paket Wisata - Travel Belitung Begaye')
 
 @section('content')
+@php
+    $getSrcImage = function($img) {
+        if (!$img) {
+            return null;
+        }
+        if (str_starts_with($img, 'http') || str_starts_with($img, 'data:')) {
+            return $img;
+        }
+        if (str_starts_with($img, 'storage/') || str_starts_with($img, 'uploads/')) {
+            return asset($img);
+        }
+        return 'data:image/jpeg;base64,' . $img;
+    };
+@endphp
 
     {{-- HERO SECTION --}}
     <section class="relative bg-slate-900 text-white py-16 md:py-24 overflow-hidden">
@@ -15,15 +29,15 @@
                 Jelajahi keindahan pantai berpasir putih, gugusan batu granit Line-up eksotis, hingga napak tilas budaya Laskar Pelangi bersama pemandu lokal profesional.
             </p>
 
-            {{-- KOTAK PENCARIAN (Utama & Selaras Dengan Halaman News) --}}
+            {{-- KOTAK PENCARIAN --}}
             <div class="max-w-md mx-auto mt-8">
                 <form action="{{ route('paket.tour') }}" method="GET" class="relative group">
                     @if(request('category'))
                         <input type="hidden" name="category" value="{{ request('category') }}">
                     @endif
 
-                    <input type="text" name="search" value="{{ $search ?? request('search') }}" placeholder="Cari nama paket wisata Belitung..." 
-                           class="w-full text-xs text-slate-900 px-6 py-4 bg-white/95 backdrop-blur-md border border-slate-200 rounded-2xl focus:outline-hidden focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10 transition-all shadow-xl shadow-black/10 placeholder-slate-400 font-medium">
+                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama paket wisata Belitung..." 
+                           class="w-full text-xs text-slate-900 px-6 py-4 bg-white/95 backdrop-blur-md border border-slate-200 rounded-2xl focus:outline-none focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10 transition-all shadow-xl shadow-black/10 placeholder-slate-400 font-medium">
                     <button type="submit" class="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-sky-600 transition-colors">
                         <i class="fas fa-search text-sm"></i>
                     </button>
@@ -35,17 +49,17 @@
     {{-- FILTER & GRID PAKET TOUR --}}
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         
-        {{-- Kategori Filter Paket Tour (Menggunakan Perulangan Seperti Halaman News) --}}
+        {{-- Kategori Filter Paket Tour --}}
         <div class="flex items-center justify-center gap-2.5 overflow-x-auto pb-4 mb-14 border-b border-slate-200/60 scrollbar-none">
             {{-- Tombol Semua Paket --}}
-            <a href="{{ route('paket.tour', request()->only('search')) }}" 
+            <a href="{{ route('paket.tour', array_filter(['search' => request('search')])) }}" 
                class="px-6 py-2.5 rounded-xl text-xs font-black transition-all tracking-wider whitespace-nowrap {{ !request('category') ? 'bg-sky-600 text-white shadow-lg shadow-sky-500/20' : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-400 hover:text-slate-900' }}">
                 Semua Paket
             </a>
             
             {{-- Perulangan Kategori Paket Tour --}}
             @foreach(['Reguler', 'Keluarga', 'Honeymoon'] as $cat)
-                <a href="{{ route('paket.tour', array_merge(request()->only('search'), ['category' => $cat])) }}" 
+                <a href="{{ route('paket.tour', array_filter(['category' => $cat, 'search' => request('search')])) }}" 
                    class="px-6 py-2.5 rounded-xl text-xs font-black transition-all tracking-wider whitespace-nowrap {{ request('category') === $cat ? 'bg-sky-600 text-white shadow-lg shadow-sky-500/20' : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-400 hover:text-slate-900' }}">
                     {{ $cat }}
                 </a>
@@ -55,7 +69,7 @@
         @if(request('search'))
             <div class="text-center mb-12 text-xs text-slate-500 font-medium">
                 Menampilkan hasil pencarian untuk: <strong class="text-slate-800">"{{ request('search') }}"</strong>
-                <a href="{{ route('paket.tour', request()->except('search')) }}" class="text-rose-500 hover:underline ml-2 font-bold">
+                <a href="{{ route('paket.tour', array_filter(['category' => request('category')])) }}" class="text-rose-500 hover:underline ml-2 font-bold">
                     <i class="fas fa-times-circle"></i> Hapus Pencarian
                 </a>
             </div>
@@ -65,13 +79,18 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             
             @forelse($packages as $package)
+                @php
+                    $packageImgUrl = $getSrcImage($package->image);
+                @endphp
+
                 {{-- KARTU PAKET --}}
                 <div class="bg-white rounded-2xl border border-slate-100 shadow-xs hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col group">
                     <div class="relative aspect-video w-full bg-slate-200 overflow-hidden">
                         
-                        @if($package->image)
-                            <img src="data:image/jpeg;base64,{{ base64_encode($package->image) }}" 
+                        @if($packageImgUrl)
+                            <img src="{{ $packageImgUrl }}" 
                                  alt="{{ $package->title }}" 
+                                 loading="lazy"
                                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
                         @else
                             <div class="w-full h-full flex items-center justify-center bg-slate-100 text-slate-400">
@@ -80,7 +99,7 @@
                         @endif
                         
                         @if(isset($package->badge) && $package->badge)
-                            <span class="absolute top-3 left-3 {{ $package->badge == 'Romantic' ? 'bg-purple-600 text-white' : 'bg-sky-500 text-slate-950' }} font-bold text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-md shadow-xs">
+                            <span class="absolute top-3 left-3 {{ strtolower($package->badge) === 'romantic' || strtolower($package->badge) === 'honeymoon' ? 'bg-purple-600 text-white' : 'bg-sky-500 text-slate-950' }} font-bold text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-md shadow-xs">
                                 {{ $package->badge }}
                             </span>
                         @endif
@@ -96,7 +115,7 @@
                                 {{ $package->title }}
                             </h2>
                             <p class="text-slate-400 text-xs mt-1.5 line-clamp-2 leading-relaxed">
-                                {{ $package->description }}
+                                {{ Str::limit(strip_tags($package->description), 120) }}
                             </p>
                         </div>
                         
@@ -127,6 +146,13 @@
                 </div>
             @endforelse
         </div>
+
+        {{-- PAGINASI PAKET --}}
+        @if(method_exists($packages, 'links'))
+            <div class="mt-12">
+                {{ $packages->links() }}
+            </div>
+        @endif
     </main>
 
 @endsection

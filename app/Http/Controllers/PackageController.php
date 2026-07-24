@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Package;
 use App\Models\News;
 use App\Models\Review;
+use App\Models\Gallery;
 use Illuminate\Http\Request;
 
 class PackageController extends Controller 
@@ -12,11 +13,12 @@ class PackageController extends Controller
     // 1. FUNGSI Halaman Beranda (Landing Page)
     public function index()
     {
+        // Mengambil top 3 paket paling banyak dipesan
         $packages = Package::withCount(['reservations' => function ($query) {
                 $query->where('status', 'success');
             }])
             ->orderBy('reservations_count', 'desc')
-            ->take(4)
+            ->take(3)
             ->get();
 
         $posts = News::latest()->take(3)->get();
@@ -24,12 +26,16 @@ class PackageController extends Controller
         $averageRating = number_format(Review::where('status', 'published')->avg('rating') ?? 0.0, 1);
         $totalReviews = Review::where('status', 'published')->count();
 
+        // 2. Tambahkan Query untuk mengambil 5 data galeri foto terbaru
+        $photos = Gallery::latest()->take(5)->get();
+
         return view('welcome', compact(
             'packages', 
             'posts', 
             'reviews', 
             'averageRating', 
-            'totalReviews'
+            'totalReviews',
+            'photos'
         ));
     }
 
@@ -60,9 +66,9 @@ class PackageController extends Controller
     {
         $package = Package::with([
             'reviews' => function ($query) {
-                $query->where('status', 'published')->latest(); // Memfilter tabel reviews
+                $query->where('status', 'published')->latest();
             },
-            'reviews.user' // Mengambil data user dari review yang lolos filter
+            'reviews.user'
         ])->where('slug', $slug)->firstOrFail();
 
         return view('paket_detail', compact('package'));

@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 
-// Import Controller Sisi Wisatawan / Publik
+// Controller Sisi Wisatawan / Publik
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PackageController;
 use App\Http\Controllers\BookingController;
@@ -10,41 +10,59 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\GalleryController;
 
-// Import Controller Sisi Panel Admin
+// Controller Sisi Panel Admin
 use App\Http\Controllers\Admin\DashboardAdminController;
 use App\Http\Controllers\Admin\PackageAdminController;
 use App\Http\Controllers\Admin\NewsAdminController;
 use App\Http\Controllers\Admin\GalleryAdminController;
 use App\Http\Controllers\Admin\ReviewAdminController;
 
-// 1. RUTE OTENTIKASI (AUTH)
+// 1. RUTE OTENTIKASI 
 Route::middleware(['guest'])->group(function () {
     Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
-    Route::post('/register', [AuthController::class, 'register'])->name('register.store');
+
+    Route::post('/register', [AuthController::class, 'register'])
+        ->middleware('throttle:5,1')
+        ->name('register.store');
 
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-    Route::post('/login', [AuthController::class, 'login'])->name('login.store');
+    
+    Route::post('/login', [AuthController::class, 'login'])
+        ->middleware('throttle:5,1')
+        ->name('login.store');
 });
 
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
+
 
 // 2. RUTE PUBLIC / TAMU (TANPA LOGIN)
 Route::get('/', [PackageController::class, 'index'])->name('beranda');
 Route::get('/paket-tour', [PackageController::class, 'tour'])->name('paket.tour');
 Route::get('/paket-tour/{slug}', [PackageController::class, 'show'])->name('paket.detail');
 
-// Dipindahkan ke NewsController & GalleryController agar lebih terstruktur
 Route::get('/news', [NewsController::class, 'index'])->name('news.index');
 Route::get('/news/{slug}', [NewsController::class, 'show'])->name('news.show');
 Route::get('/galeri', [GalleryController::class, 'index'])->name('gallery.index');
 
-// 3. RUTE PROTEKSI WISATAWAN (WAJIB LOGIN)
+
+// 3. RUTE WEBHOOK MIDTRANS (NOTIFICATION CALLBACK)
+Route::post('/booking/update-status', [BookingController::class, 'updateStatus'])->name('booking.update-status');
+
+
+// 4. RUTE PROTEKSI WISATAWAN (WAJIB LOGIN)
 Route::middleware(['auth'])->group(function () {
     
-    // Fitur Transaksi & Pemesanan (Dikelola penuh oleh BookingController)
+    // Fitur Transaksi & Pemesanan
     Route::get('/booking/{id}', [BookingController::class, 'showBookingForm'])->name('booking.form');
-    Route::post('/booking/process/{id}', [BookingController::class, 'process'])->name('booking.process');
-    Route::post('/booking/update-status', [BookingController::class, 'updateStatus'])->name('booking.update-status');
+    
+    // Batasi eksekusi booking max 5x per menit per user untuk mencegah spam order
+    Route::post('/booking/process/{id}', [BookingController::class, 'process'])
+        ->middleware('throttle:5,1')
+        ->name('booking.process');
+
+    // === TAMBAHKAN ROUTE CHECKOUT DI SINI ===
+    Route::get('/reservations/{order_id}/checkout', [BookingController::class, 'checkout'])->name('reservations.checkout');
+        
     Route::get('/reservations/{order_id}/download-ticket', [BookingController::class, 'downloadTicket'])->name('reservations.downloadTicket');
     
     // Fitur Manajemen Profil Wisatawan & Ulasan
@@ -52,7 +70,8 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/reviews/store', [ProfileController::class, 'storeReview'])->name('reviews.storeCustomer');
 });
 
-// 4. RUTE PANEL ADMIN (SISTEM MANAGEMENT)
+
+// 5. RUTE PANEL ADMIN (SISTEM MANAGEMENT)
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     
     // Dashboard & Pelaporan

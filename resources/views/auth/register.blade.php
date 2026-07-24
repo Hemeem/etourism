@@ -16,7 +16,7 @@
             
             {{-- SIDEBAR KIRI --}}
             <div class="hidden md:flex md:w-1/2 bg-cover bg-center relative p-10 flex-col justify-between" 
-                 style="background-image: linear-gradient(to bottom, rgba(15, 23, 42, 0.4), rgba(15, 23, 42, 0.85)), url('https://images.unsplash.com/photo-1544644181-1484b3fdfc62?q=80&w=1200');">
+                 style="background-image: linear-gradient(to bottom, rgba(15, 23, 42, 0.4), rgba(15, 23, 42, 0.85)), url('https://images.unsplash.com/photo-1506929562872-bb421503ef21?q=80&w=1200');">
                 
                 <a href="{{ url('/') }}" class="flex items-center gap-2 text-white no-underline group">
                     <img src="{{ asset('images/logo.png') }}" alt="Logo" class="w-8 h-8 object-contain group-hover:scale-105 transition-transform">
@@ -51,12 +51,12 @@
                         <div class="relative">
                             <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xs"><i class="far fa-user"></i></span>
                             <input type="text" name="name" value="{{ old('name') }}" required placeholder="Nama sesuai kartu identitas"
-                                class="w-full text-xs pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/5 transition-all">
+                                class="w-full text-xs pl-11 pr-4 py-2.5 bg-slate-50 border {{ $errors->has('name') ? 'border-red-400' : 'border-slate-200' }} rounded-xl focus:outline-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/5 transition-all">
                         </div>
                         @error('name') <span class="text-[10px] text-red-500 font-medium mt-1 block">{{ $message }}</span> @enderror
                     </div>
 
-                    {{-- INPUT EMAIL (WAJIB @gmail.com) --}}
+                    {{-- INPUT EMAIL --}}
                     <div>
                         <label class="block text-[10px] font-black uppercase tracking-wider text-slate-600 mb-1">Alamat Email</label>
                         <div class="relative">
@@ -65,12 +65,12 @@
                                 pattern="^[a-zA-Z0-9._%+-]+@gmail\.com$"
                                 title="Email harus menggunakan domain resmi @gmail.com"
                                 placeholder="contoh@gmail.com"
-                                class="w-full text-xs pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/5 transition-all">
+                                class="w-full text-xs pl-11 pr-4 py-2.5 bg-slate-50 border {{ $errors->has('email') ? 'border-red-400' : 'border-slate-200' }} rounded-xl focus:outline-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/5 transition-all">
                         </div>
                         @error('email') <span class="text-[10px] text-red-500 font-medium mt-1 block">{{ $message }}</span> @enderror
                     </div>
 
-                    {{-- INPUT NOMOR HANDPHONE (HANYA ANGKA) --}}
+                    {{-- INPUT NOMOR HANDPHONE --}}
                     <div>
                         <label class="block text-[10px] font-black uppercase tracking-wider text-slate-600 mb-1">Nomor Handphone</label>
                         <div class="relative">
@@ -79,23 +79,26 @@
                                 pattern="[0-9]+" 
                                 title="Nomor handphone hanya boleh berisi angka"
                                 placeholder="Contoh: 0812345678"
-                                class="w-full text-xs pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/5 transition-all">
+                                class="w-full text-xs pl-11 pr-4 py-2.5 bg-slate-50 border {{ $errors->has('no_hp') ? 'border-red-400' : 'border-slate-200' }} rounded-xl focus:outline-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/5 transition-all">
                         </div>
-                        {{-- Menambahkan penangkap error nomor HP di bawah ini --}}
                         @error('no_hp') <span class="text-[10px] text-red-500 font-medium mt-1 block">{{ $message }}</span> @enderror
                     </div>
 
-                    {{-- GRID PASSWORD & KONFIRMASI --}}
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    {{-- GRID PASSWORD & KONFIRMASI--}}
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5" x-data="{ showPass: false, showConf: false }">
                         <div>
                             <label class="block text-[10px] font-black uppercase tracking-wider text-slate-600 mb-1">Password</label>
                             <div class="relative">
                                 <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xs"><i class="fas fa-lock"></i></span>
-                                <input type="password" name="password" required 
+                                <input :type="showPass ? 'text' : 'password'" name="password" required 
                                     pattern="(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{6,}"
                                     title="Password minimal 6 karakter, harus mengandung minimal 1 huruf besar dan 1 karakter unik/simbol"
                                     placeholder="Kombinasi sandi"
-                                    class="w-full text-xs pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/5 transition-all">
+                                    class="w-full text-xs pl-11 pr-10 py-2.5 bg-slate-50 border {{ $errors->has('password') ? 'border-red-400' : 'border-slate-200' }} rounded-xl focus:outline-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/5 transition-all">
+                                
+                                <button type="button" @click="showPass = !showPass" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs focus:outline-none">
+                                    <i class="fas" :class="showPass ? 'fa-eye-slash' : 'fa-eye'"></i>
+                                </button>
                             </div>
                             @error('password') <span class="text-[10px] text-red-500 font-medium mt-1 block">{{ $message }}</span> @enderror
                         </div>
@@ -105,8 +108,12 @@
                             <label class="block text-[10px] font-black uppercase tracking-wider text-slate-600 mb-1">Konfirmasi</label>
                             <div class="relative">
                                 <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xs"><i class="fas fa-shield-alt"></i></span>
-                                <input type="password" name="password_confirmation" required placeholder="Ulangi sandi"
-                                    class="w-full text-xs pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/5 transition-all">
+                                <input :type="showConf ? 'text' : 'password'" name="password_confirmation" required placeholder="Ulangi sandi"
+                                    class="w-full text-xs pl-11 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/5 transition-all">
+                                
+                                <button type="button" @click="showConf = !showConf" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs focus:outline-none">
+                                    <i class="fas" :class="showConf ? 'fa-eye-slash' : 'fa-eye'"></i>
+                                </button>
                             </div>
                         </div>
                     </div>

@@ -8,26 +8,23 @@ use Illuminate\Support\Facades\Schema;
 
 class NewsController extends Controller
 {
-    /**
-     * Menampilkan daftar artikel/cerita blog dengan fitur search dan filter kategori.
-     */
+    // Menampilkan daftar artikel/cerita blog dengan fitur search dan filter kategori.
     public function index(Request $request)
     {
         $search = $request->query('search');
         $category = $request->query('category');
         
-        // Memulai query builder dari model News
         $query = News::query();
         
-        // 1. Kondisi Saringan Kata Kunci Pencarian (Search)
         if ($search) {
-            $query->where(function($q) use ($search) {
-                $q->where('title', 'like', '%' . $search . '%')
-                  ->orWhere('content', 'like', '%' . $search . '%');
+            $escapedSearch = addcslashes($search, '%_');
+
+            $query->where(function($q) use ($escapedSearch) {
+                $q->where('title', 'like', '%' . $escapedSearch . '%')
+                  ->orWhere('content', 'like', '%' . $escapedSearch . '%');
             });
         }
         
-        // 2. Kondisi Saringan Kategori (Aman dari ketidakpastian nama kolom)
         if ($category) {
             if (Schema::hasColumn('news', 'category')) {
                 $query->where('category', $category);
@@ -35,25 +32,20 @@ class NewsController extends Controller
                 $query->where('kategori', $category);
             }
         }
-
-        // Eksekusi data dari database dengan urutan terbaru
-        $posts = $query->latest()->get();
+        /** @var \Illuminate\Pagination\LengthAwarePaginator $posts */
+        $posts = $query->latest()->paginate(7)->appends($request->all());
         
-        // Membagi data secara dinamis untuk layout halaman News Anda
         $featuredPost = $posts->first();
-        $regularPosts = $posts->skip(1);
+        $regularPosts = $posts->slice(1);
 
         return view('news', compact('posts', 'featuredPost', 'regularPosts', 'search', 'category'));
     }
 
-    /**
-     * Menampilkan detail isi satu artikel berita berdasarkan slug atau ID.
-     */
+    // Menampilkan detail isi satu artikel berita berdasarkan slug atau ID.
     public function show($slug)
     {
         $query = News::query();
         
-        // Cek apakah tabel news menggunakan struktur kolom slug atau ID
         if (Schema::hasColumn('news', 'slug')) {
             $query->where('slug', $slug);
         } else {
@@ -62,8 +54,10 @@ class NewsController extends Controller
 
         $post = $query->firstOrFail();
         
-        // Mengambil 3 artikel terkait terbaru (selain artikel yang sedang dibaca)
-        $relatedPosts = News::where('id', '!=', $post->id)->latest()->take(3)->get();
+        $relatedPosts = News::where('id', '!=', $post->id)
+                            ->latest()
+                            ->take(3)
+                            ->get();
 
         return view('news_detail', compact('post', 'relatedPosts'));
     }

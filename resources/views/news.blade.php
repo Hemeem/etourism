@@ -3,8 +3,24 @@
 @section('title', 'Cerita & Panduan Wisata Belitung - Travel Belitung Begaye')
 
 @section('content')
+@php
+    $getSrcImage = function($img) {
+        if (!$img) {
+            return 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80';
+        }
+        if (str_starts_with($img, 'http') || str_starts_with($img, 'data:')) {
+            return $img;
+        }
+        if (str_starts_with($img, 'storage/') || str_starts_with($img, 'uploads/')) {
+            return asset($img);
+        }
+        return 'data:image/jpeg;base64,' . $img;
+    };
+@endphp
+
 <div class="min-h-screen bg-linear-to-b from-sky-50 via-slate-50/50 to-white pb-24">
     
+    {{-- HEADER SECTION & SEARCH BAR --}}
     <div class="relative overflow-hidden bg-linear-to-r from-slate-950 via-blue-950 to-slate-900 text-white py-20 mb-16 border-b border-white/5 shadow-xl shadow-blue-950/10">
         <div class="absolute -right-10 -top-10 w-40 h-40 bg-sky-500/10 rounded-full blur-3xl"></div>
         <div class="absolute left-1/4 bottom-0 w-60 h-20 bg-sky-600/5 rounded-full blur-2xl"></div>
@@ -17,13 +33,16 @@
                 Arsip Cerita & <span class="text-transparent bg-clip-text bg-linear-to-r from-sky-400 to-sky-200">Tips Wisata</span>
             </h1>
             <p class="text-xs md:text-sm text-slate-400 mt-3 max-w-xl mx-auto font-medium leading-relaxed">
-                Temukan rekomendasi kuliner tersembunyi, protokol perjalanan, dan rute *island hopping* terbaik langsung dari pemandu lokal kami.
+                Temukan rekomendasi kuliner tersembunyi, protokol perjalanan, dan rute <em>island hopping</em> terbaik langsung dari pemandu lokal kami.
             </p>
 
             <div class="max-w-md mx-auto mt-8">
                 <form action="{{ route('news.index') }}" method="GET" class="relative group">
-                    <input type="text" name="search" value="{{ $search }}" placeholder="Cari panduan atau tips liburan..." 
-                           class="w-full text-xs text-slate-900 px-6 py-4 bg-white/95 backdrop-blur-md border border-slate-200 rounded-2xl focus:outline-hidden focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10 transition-all shadow-xl shadow-black/10 placeholder-slate-400 font-medium">
+                    @if(request('category'))
+                        <input type="hidden" name="category" value="{{ request('category') }}">
+                    @endif
+                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari panduan atau tips liburan..." 
+                           class="w-full text-xs text-slate-900 px-6 py-4 bg-white/95 backdrop-blur-md border border-slate-200 rounded-2xl focus:outline-none focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10 transition-all shadow-xl shadow-black/10 placeholder-slate-400 font-medium">
                     <button type="submit" class="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-sky-600 transition-colors">
                         <i class="fas fa-search text-sm"></i>
                     </button>
@@ -34,14 +53,15 @@
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
+        {{-- FILTER KATEGORI --}}
         <div class="flex items-center justify-center gap-2.5 overflow-x-auto pb-4 mb-14 border-b border-slate-200/60 scrollbar-none">
-            <a href="{{ route('news.index') }}" 
-               class="px-6 py-2.5 rounded-xl text-xs font-black transition-all tracking-wider whitespace-nowrap {{ !$category ? 'bg-sky-600 text-white shadow-lg shadow-sky-500/20' : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-400 hover:text-slate-900' }}">
+            <a href="{{ route('news.index', array_filter(['search' => request('search')])) }}" 
+               class="px-6 py-2.5 rounded-xl text-xs font-black transition-all tracking-wider whitespace-nowrap {{ !request('category') ? 'bg-sky-600 text-white shadow-lg shadow-sky-500/20' : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-400 hover:text-slate-900' }}">
                 Semua Cerita
             </a>
             @foreach(['Destinasi', 'Kuliner', 'Tips', 'Budaya'] as $cat)
-                <a href="{{ route('news.index', ['category' => $cat]) }}" 
-                   class="px-6 py-2.5 rounded-xl text-xs font-black transition-all tracking-wider whitespace-nowrap {{ $category === $cat ? 'bg-sky-600 text-white shadow-lg shadow-sky-500/20' : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-400 hover:text-slate-900' }}">
+                <a href="{{ route('news.index', array_filter(['category' => $cat, 'search' => request('search')])) }}" 
+                   class="px-6 py-2.5 rounded-xl text-xs font-black transition-all tracking-wider whitespace-nowrap {{ request('category') === $cat ? 'bg-sky-600 text-white shadow-lg shadow-sky-500/20' : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-400 hover:text-slate-900' }}">
                     {{ $cat }}
                 </a>
             @endforeach
@@ -53,23 +73,16 @@
         </div>
 
         {{-- BAGIAN 1: FEATURED POST (SOROTAN) --}}
-        @if($featuredPost && !$search && !$category)
+        @if(isset($featuredPost) && $featuredPost && !request('search') && !request('category'))
+            @php
+                $featuredImgUrl = $getSrcImage($featuredPost->image);
+            @endphp
             <div class="max-w-5xl mx-auto bg-white rounded-3xl border border-slate-100 shadow-xl shadow-sky-900/5 overflow-hidden mb-20 group hover:shadow-2xl hover:shadow-sky-900/10 transition-all duration-500">
                 <div class="grid grid-cols-1 md:grid-cols-12 gap-0">
                     <div class="md:col-span-5 h-64 md:h-80 overflow-hidden relative bg-slate-900">
-                        @if($featuredPost->image)
-                            @php
-                                $isBase64Featured = base64_encode(base64_decode($featuredPost->image, true)) === $featuredPost->image;
-                                $displayFeaturedImage = $isBase64Featured ? $featuredPost->image : base64_encode($featuredPost->image);
-                            @endphp
-                            <img src="data:image/jpeg;base64,{{ $displayFeaturedImage }}" 
-                                 alt="{{ $featuredPost->title }}" 
-                                 class="w-full h-full object-cover group-hover:scale-103 transition-transform duration-700 opacity-95">
-                        @else
-                            <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800" 
-                                 alt="{{ $featuredPost->title }}" 
-                                 class="w-full h-full object-cover group-hover:scale-103 transition-transform duration-700 opacity-95">
-                        @endif
+                        <img src="{{ $featuredImgUrl }}" 
+                             alt="{{ $featuredPost->title }}" 
+                             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-95">
                         <div class="absolute inset-0 bg-linear-to-t from-black/20 via-transparent to-transparent"></div>
                     </div>
                     
@@ -102,24 +115,22 @@
         @endif
 
         {{-- BAGIAN 2: REGULAR POSTS (GRID DAFTAR ARTIKEL) --}}
-        @if($posts->count() > 0)
+        @php
+            $displayPosts = (request('category') || request('search')) ? $posts : ($regularPosts ?? $posts);
+        @endphp
+
+        @if(isset($displayPosts) && $displayPosts->count() > 0)
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                @foreach(($category || $search ? $posts : $regularPosts) as $post)
+                @foreach($displayPosts as $post)
+                    @php
+                        $postImgUrl = $getSrcImage($post->image);
+                    @endphp
                     <article class="bg-white rounded-2xl border border-slate-100 shadow-xl shadow-sky-900/5 overflow-hidden flex flex-col group hover:shadow-2xl hover:shadow-sky-900/10 transition-all duration-300">
                         <div class="h-48 overflow-hidden relative bg-slate-950">
-                            @if($post->image)
-                                @php
-                                    $isBase64Regular = base64_encode(base64_decode($post->image, true)) === $post->image;
-                                    $displayRegularImage = $isBase64Regular ? $post->image : base64_encode($post->image);
-                                @endphp
-                                <img src="data:image/jpeg;base64,{{ $displayRegularImage }}" 
-                                     alt="{{ $post->title }}" 
-                                     class="w-full h-full object-cover group-hover:scale-103 transition-transform duration-500 opacity-90">
-                            @else
-                                <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=600&q=80" 
-                                     alt="{{ $post->title }}" 
-                                     class="w-full h-full object-cover group-hover:scale-103 transition-transform duration-500 opacity-90">
-                            @endif
+                            <img src="{{ $postImgUrl }}" 
+                                 alt="{{ $post->title }}" 
+                                 loading="lazy"
+                                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90">
                             <span class="absolute top-4 left-4 bg-white/95 backdrop-blur-md text-slate-900 font-black text-[9px] uppercase tracking-widest px-2.5 py-1 rounded shadow-xs border border-slate-100">
                                 {{ $post->category ?? 'Tips Wisata' }}
                             </span>
@@ -141,6 +152,11 @@
                     </article>
                 @endforeach
             </div>
+            @if(method_exists($displayPosts, 'links'))
+                <div class="mt-12">
+                    {{ $displayPosts->links() }}
+                </div>
+            @endif
         @else
             <div class="text-center py-16 bg-white border border-slate-200/60 rounded-3xl max-w-sm mx-auto shadow-xs">
                 <div class="w-14 h-14 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner">

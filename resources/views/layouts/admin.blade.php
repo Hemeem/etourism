@@ -3,19 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - Travel Belitung Begaye</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>@yield('title', 'Admin Dashboard') - Travel Belitung Begaye</title>
+
+    {{-- Tailwind & Vite Assets --}}
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+
+    {{-- Third-party Icons & Alpine.js --}}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    @stack('styles')
 </head>
 <body x-data="{ openAdminLogout: false }" class="bg-slate-50 font-sans text-slate-800 antialiased">
 
     <div class="flex min-h-screen">
         {{-- SIDEBAR --}}
         <aside class="w-64 bg-slate-900 text-slate-300 flex flex-col fixed inset-y-0 left-0 z-20 shadow-xl">
+            {{-- Brand Logo / Header --}}
             <div class="p-6 border-b border-slate-800 flex items-center gap-3">
                 <div class="w-8 h-8 bg-sky-500 rounded-lg flex items-center justify-center text-white font-black shadow-md">
-                    {{ substr(auth()->user()->name ?? 'B', 0, 1) }}
+                    {{ strtoupper(substr(auth()->user()->name ?? 'B', 0, 1)) }}
                 </div>
                 <div>
                     <h1 class="text-sm font-black text-white tracking-wider uppercase">Belitung Begaye</h1>
@@ -23,47 +32,47 @@
                 </div>
             </div>
             
+            {{-- Navigation --}}
             <nav class="flex-1 p-4 space-y-1.5 overflow-y-auto">
-                <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-slate-800 hover:text-white transition-colors">
-                    <i class="fas fa-chart-pie text-sm text-slate-400"></i> Dashboard
+                {{-- Dashboard --}}
+                <a href="{{ route('admin.dashboard') }}" 
+                   class="flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-colors {{ request()->routeIs('admin.dashboard') ? 'bg-sky-600 text-white shadow-lg shadow-sky-900/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}">
+                    <i class="fas fa-chart-pie text-sm"></i> Dashboard
                 </a>
+
                 <div class="h-px bg-slate-800 my-4"></div>
                 <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-4 block mb-2">Manajemen Konten</span>
                 
-                {{-- NAVIGASI DINAMIS: PAKET WISATA --}}
+                {{-- Paket Wisata --}}
                 <a href="{{ route('admin.packages.index') }}" 
-                   class="flex items-center justify-between px-4 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all 
-                   {{ request()->routeIs('admin.packages.*') ? 'bg-sky-600 text-white shadow-lg shadow-sky-900/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}">
+                   class="flex items-center justify-between px-4 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all {{ request()->routeIs('admin.packages.*') ? 'bg-sky-600 text-white shadow-lg shadow-sky-900/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}">
                     <span class="flex items-center gap-3"><i class="fas fa-cubes text-sm"></i> Paket Wisata</span>
                     <span class="{{ request()->routeIs('admin.packages.*') ? 'bg-sky-700 text-sky-100' : 'bg-slate-800 text-slate-400' }} text-[10px] px-2 py-0.5 rounded-full font-bold">
                         {{ $totalPackages ?? 0 }}
                     </span>
                 </a>
 
-                {{-- NAVIGASI DINAMIS: BERITA & BLOG --}}
+                {{-- Berita & Blog --}}
                 <a href="{{ route('admin.news.index') }}" 
-                   class="flex items-center justify-between px-4 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all 
-                   {{ request()->routeIs('admin.news.*') ? 'bg-sky-600 text-white shadow-lg shadow-sky-900/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}">
+                   class="flex items-center justify-between px-4 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all {{ request()->routeIs('admin.news.*') ? 'bg-sky-600 text-white shadow-lg shadow-sky-900/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}">
                     <span class="flex items-center gap-3"><i class="fas fa-newspaper text-sm"></i> Berita & Blog</span>
                     <span class="{{ request()->routeIs('admin.news.*') ? 'bg-sky-700 text-sky-100' : 'bg-slate-800 text-slate-400' }} text-[10px] px-2 py-0.5 rounded-full font-bold">
                         {{ $totalNews ?? 0 }}
                     </span>
                 </a>
 
-                {{-- NAVIGASI DINAMIS: GALERI FOTO --}}
+                {{-- Galeri Foto --}}
                 <a href="{{ route('admin.galleries.index') }}" 
-                class="flex items-center justify-between px-4 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all 
-                {{ request()->routeIs('admin.galleries.*') ? 'bg-sky-600 text-white shadow-lg shadow-sky-900/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}">
+                   class="flex items-center justify-between px-4 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all {{ request()->routeIs('admin.galleries.*') ? 'bg-sky-600 text-white shadow-lg shadow-sky-900/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}">
                     <span class="flex items-center gap-3"><i class="fas fa-images text-sm"></i> Galeri Foto</span>
                     <span class="{{ request()->routeIs('admin.galleries.*') ? 'bg-sky-700 text-sky-100' : 'bg-slate-800 text-slate-400' }} text-[10px] px-2 py-0.5 rounded-full font-bold">
                         {{ $totalGalleries ?? 0 }}
                     </span>
                 </a>
 
-                {{-- NAVIGASI DINAMIS: ULASAN / REVIEW --}}
+                {{-- Ulasan / Review --}}
                 <a href="{{ route('admin.reviews.index') }}" 
-                   class="flex items-center justify-between px-4 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all 
-                   {{ request()->routeIs('admin.reviews.*') ? 'bg-sky-600 text-white shadow-lg shadow-sky-900/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}">
+                   class="flex items-center justify-between px-4 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all {{ request()->routeIs('admin.reviews.*') ? 'bg-sky-600 text-white shadow-lg shadow-sky-900/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}">
                     <span class="flex items-center gap-3"><i class="fas fa-star text-sm"></i> Ulasan / Review</span>
                     <span class="{{ request()->routeIs('admin.reviews.*') ? 'bg-sky-700 text-amber-300' : 'bg-amber-500/10 text-amber-500' }} text-[10px] px-2 py-0.5 rounded-full font-bold">
                         {{ $avgRating ?? '0.0' }}
@@ -71,7 +80,7 @@
                 </a>
             </nav>
 
-            {{-- TOMBOL PEMICU MODAL LOGOUT ADMIN --}}
+            {{-- Logout Button Trigger --}}
             <div class="p-4 border-t border-slate-800">
                 <button type="button" @click="openAdminLogout = true" class="w-full bg-slate-800 hover:bg-rose-950/40 hover:text-rose-400 border border-slate-700/50 text-xs font-black uppercase tracking-wider py-3.5 px-4 rounded-xl transition-all flex items-center justify-center gap-2.5 cursor-pointer">
                     <i class="fas fa-sign-out-alt"></i> Keluar Sistem
@@ -88,13 +97,17 @@
                     <i class="fas fa-chevron-right text-[9px] text-slate-300"></i>
                     <span class="text-slate-800 font-black">@yield('page_title', 'Dashboard')</span>
                 </div>
+                
                 <div class="flex items-center gap-4">
+                    @yield('topbar_actions')
                     <div class="text-right">
                         <span class="text-xs font-black text-slate-900 block">{{ auth()->user()->name ?? 'Admin' }}</span>
-                        <span class="text-[10px] text-emerald-500 font-bold uppercase tracking-wider flex items-center justify-end gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Online</span>
+                        <span class="text-[10px] text-emerald-500 font-bold uppercase tracking-wider flex items-center justify-end gap-1">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Online
+                        </span>
                     </div>
                     <div class="w-10 h-10 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 font-black shadow-inner shadow-slate-200/50">
-                        {{ substr(auth()->user()->name ?? 'A', 0, 1) }}
+                        {{ strtoupper(substr(auth()->user()->name ?? 'A', 0, 1)) }}
                     </div>
                 </div>
             </header>
@@ -107,12 +120,18 @@
                     </div>
                 @endif
 
+                @if(session('error'))
+                    <div class="mb-6 p-4 bg-rose-50 border border-rose-200 text-rose-800 text-xs font-bold rounded-xl flex items-center gap-2 shadow-sm shadow-rose-900/5">
+                        <i class="fas fa-exclamation-circle text-sm text-rose-500"></i> {{ session('error') }}
+                    </div>
+                @endif
+
                 @yield('content')
             </main>
         </div>
     </div>
 
-    {{-- STRUCTURE MODAL POP-UP LOGOUT ADMIN --}}
+    {{-- LOGOUT MODAL --}}
     <div x-show="openAdminLogout" 
          x-transition:enter="transition ease-out duration-300"
          x-transition:enter-start="opacity-0"
@@ -120,8 +139,8 @@
          x-transition:leave="transition ease-in duration-200"
          x-transition:leave-start="opacity-100"
          x-transition:leave-end="opacity-0"
-         class="fixed inset-0 w-screen h-screen z-100 flex items-center justify-center bg-slate-950/60 backdrop-blur-xs p-4"
-         style="display: none;">
+         class="fixed inset-0 w-screen h-screen z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-xs p-4"
+         x-cloak>
         
         <div @click.outside="openAdminLogout = false"
              x-transition:enter="transition ease-out duration-300"
@@ -137,7 +156,9 @@
             </div>
             
             <h3 class="text-base font-black text-slate-900 tracking-tight">Konfirmasi Keluar Admin</h3>
-            <p class="text-xs text-slate-500 mt-1.5 leading-relaxed">Apakah Anda yakin ingin mengakhiri sesi pengerjaan dan keluar dari panel admin <span class="font-bold text-slate-700">Belitung Begaye</span>?</p>
+            <p class="text-xs text-slate-500 mt-1.5 leading-relaxed">
+                Apakah Anda yakin ingin mengakhiri sesi pengerjaan dan keluar dari panel admin <span class="font-bold text-slate-700">Belitung Begaye</span>?
+            </p>
             
             <div class="flex gap-3 mt-5">
                 <button type="button" @click="openAdminLogout = false"
@@ -156,5 +177,6 @@
         </div>
     </div>
 
+    @stack('scripts')
 </body>
 </html>

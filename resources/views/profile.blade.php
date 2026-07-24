@@ -6,8 +6,15 @@
 <div class="min-h-screen bg-slate-50/50 py-12 md:py-20" x-data="{ openReviewModal: false, selectedPackageId: '', selectedReservationId: ''}">
     <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        @if(session('success'))
-            <div class="mb-8 p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl text-sm font-semibold flex items-center gap-3 shadow-xs">
+        {{-- Flash Messages --}}
+        @if(session('success')) 
+            <div x-data="{ show: true }"
+                x-init="setTimeout(() => show = false, 4000)"
+                x-show="show"
+                x-transition:leave="transition ease-in duration-500"
+                x-transition:leave-start="opacity-100 transform scale-100"
+                x-transition:leave-end="opacity-0 transform scale-95"
+                class="mb-8 p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl text-sm font-semibold flex items-center gap-3 shadow-xs">
                 <div class="w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs shrink-0">
                     <i class="fas fa-check"></i>
                 </div>
@@ -16,7 +23,13 @@
         @endif
 
         @if(session('error'))
-            <div class="mb-8 p-4 bg-rose-50 border border-rose-200 text-rose-800 rounded-2xl text-sm font-semibold flex items-center gap-3 shadow-xs">
+            <div x-data="{ show: true }"
+                x-init="setTimeout(() => show = false, 4000)"
+                x-show="show"
+                x-transition:leave="transition ease-in duration-500"
+                x-transition:leave-start="opacity-100 transform scale-100"
+                x-transition:leave-end="opacity-0 transform scale-95"
+                class="mb-8 p-4 bg-rose-50 border border-rose-200 text-rose-800 rounded-2xl text-sm font-semibold flex items-center gap-3 shadow-xs">
                 <div class="w-6 h-6 rounded-full bg-rose-500 text-white flex items-center justify-center text-xs shrink-0">
                     <i class="fas fa-exclamation-triangle"></i>
                 </div>
@@ -84,19 +97,20 @@
                                 <div class="flex flex-wrap items-center gap-2">
                                     <span class="font-mono text-xs text-slate-400 font-bold tracking-wider">#{{ $reservation->order_id }}</span>
                                     <span class="text-slate-300 text-xs">•</span>
-                                    @if($reservation->status == 'paid')
-                                        <span class="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider">
-                                            <i class="fas fa-check-circle mr-1"></i> Paid / Lunas
-                                        </span>
-                                    @elseif($reservation->status == 'unpaid')
-                                        <span class="bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider">
-                                            <i class="fas fa-clock mr-1"></i> Menunggu Pembayaran
-                                        </span>
-                                    @else
-                                        <span class="bg-rose-50 text-rose-700 border border-rose-200 px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider">
-                                            {{ $reservation->status }}
-                                        </span>
-                                    @endif
+                                    <span @class([
+                                        'px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider border flex items-center gap-1.5',
+                                        'bg-emerald-50 text-emerald-700 border-emerald-200' => $reservation->status === 'paid',
+                                        'bg-amber-50 text-amber-700 border-amber-200' => $reservation->status === 'unpaid',
+                                        'bg-rose-50 text-rose-700 border-rose-200' => !in_array($reservation->status, ['paid', 'unpaid']),
+                                    ])>
+                                        <i @class([
+                                            'fas',
+                                            'fa-check-circle' => $reservation->status === 'paid',
+                                            'fa-clock' => $reservation->status === 'unpaid',
+                                            'fa-exclamation-circle' => !in_array($reservation->status, ['paid', 'unpaid']),
+                                        ])></i>
+                                        {{ $reservation->status === 'paid' ? 'Paid / Lunas' : ($reservation->status === 'unpaid' ? 'Menunggu Pembayaran' : $reservation->status) }}
+                                    </span>
                                 </div>
                                 <h4 class="text-lg font-black text-slate-900 tracking-tight leading-snug">
                                     {{ $reservation->package->title }}
@@ -119,14 +133,15 @@
                                     <p class="text-base font-black text-slate-900">Rp {{ number_format($reservation->total_price, 0, ',', '.') }}</p>
                                 </div>
                                 
-                                {{-- PERBAIKAN: Tombol Aksi khusus untuk status PAID --}}
-                                @if($reservation->status == 'paid')
-                                    <div class="flex items-center gap-2">
-                                        {{-- Tombol Unduh E-Ticket --}}
+                                {{-- AREA TOMBOL AKSI BERDASARKAN STATUS --}}
+                                <div class="flex items-center gap-2">
+                                    {{-- Aksi Status PAID --}}
+                                    @if($reservation->status == 'paid')
+                                        {{-- Unduh E-Ticket --}}
                                         <a href="{{ route('reservations.downloadTicket', $reservation->order_id) }}" 
-                                            target="_blank"
-                                            class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-3.5 py-2.5 rounded-xl transition-all duration-200 flex items-center gap-2 shadow-xs cursor-pointer"
-                                            title="Unduh E-Ticket PDF">
+                                           target="_blank"
+                                           class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-3.5 py-2.5 rounded-xl transition-all duration-200 flex items-center gap-2 shadow-xs cursor-pointer"
+                                           title="Unduh E-Ticket PDF">
                                                 <i class="fas fa-ticket-alt text-sm"></i> E-Ticket
                                         </a>
 
@@ -141,8 +156,14 @@
                                                 <i class="far fa-star text-sm"></i> Beri Ulasan
                                             </button>
                                         @endif
-                                    </div>
-                                @endif
+
+                                    @elseif($reservation->status == 'unpaid')
+                                        <a href="{{ route('reservations.checkout', $reservation->order_id) }}" 
+                                           class="bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs px-3.5 py-2.5 rounded-xl transition-all duration-200 flex items-center gap-2 shadow-xs cursor-pointer">
+                                            <i class="fas fa-credit-card text-sm"></i> Bayar Sekarang
+                                        </a>
+                                    @endif
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -156,7 +177,7 @@
                     </div>
                 @endforelse
 
-                {{-- Navigasi Pagination Custom --}}
+                {{-- NAVIGASI PAGINATION --}}
                 @if ($reservations->hasPages())
                     <div class="mt-8 p-4 bg-white border border-slate-200 rounded-2xl shadow-xs flex items-center justify-between">
                         <div class="flex flex-1 justify-between sm:hidden">
@@ -208,8 +229,6 @@
             </div>
         </div>
     </div>
-
-    {{-- MODAL REVIEW --}}
     @include('partials.modal-review')
 </div>
 @endsection

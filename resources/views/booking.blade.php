@@ -12,7 +12,7 @@
 <style>
     [x-cloak] { display: none !important; }
 
-    /* CSS KHUSUS UNTUK CETAK PDF RESI YANG RAPI (PRINT STYLE SHEET) */
+    /* CSS CETAK PDF RESI */
     @media print {
         body * {
             visibility: hidden;
@@ -49,10 +49,10 @@
      x-init="initSystem()">
      
     <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-        <div id="printable-receipt" class="bg-white rounded-3xl p-1 border border-slate-200 shadow-xl mt-20">
+        <div class="bg-white rounded-3xl p-1 border border-slate-200 shadow-xl mt-20">
             <div class="rounded-3xl border border-slate-100 overflow-hidden">
                 
-                {{-- Header Card (Judul Paket) --}}
+                {{-- Header Card --}}
                 <div class="p-8 bg-linear-to-r from-slate-950 via-slate-900 to-blue-950 text-white flex flex-wrap justify-between items-center gap-6">
                     <div>
                         <span class="text-[10px] uppercase tracking-widest font-black text-sky-400 block mb-1">Amankan Pesanan Anda</span>
@@ -70,7 +70,7 @@
                     </div>
                 </div>
 
-                {{-- ==================== INDIKATOR STEP (PROGRESS BAR) ==================== --}}
+                {{-- INDIKATOR STEP --}}
                 <div class="max-w-md mx-auto my-8 px-6 no-print">
                     <div class="flex items-center justify-between relative">
                         <div class="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-slate-200 rounded-full -z-10"></div>
@@ -107,7 +107,7 @@
 
                 <div class="p-8 md:p-10 space-y-8 pt-2">
 
-                    {{-- ==================== STEP 1: MENGISI DETAIL ==================== --}}
+                    {{-- STEP 1: MENGISI DETAIL --}}
                     <div x-show="step === 1" x-transition:enter="transition ease-out duration-100" class="space-y-6">
                         <div class="flex items-center gap-4 border-l-4 border-sky-600 pl-4 mb-8">
                             <i class="fas fa-user-edit text-2xl text-sky-600"></i>
@@ -118,19 +118,14 @@
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {{-- INPUT NAMA (READONLY) --}}
                             <div class="space-y-2">
                                 <label class="text-xs font-black text-slate-900 uppercase tracking-widest">Nama Lengkap Pemesan</label>
                                 <input type="text" x-model="tourName" readonly class="w-full text-sm font-medium px-5 py-4 bg-slate-100 border border-slate-200 rounded-xl text-slate-500 cursor-not-allowed focus:outline-hidden">
                             </div>
-
-                            {{-- INPUT EMAIL (READONLY) --}}
                             <div class="space-y-2">
                                 <label class="text-xs font-black text-slate-900 uppercase tracking-widest">Alamat Email Aktif</label>
                                 <input type="email" x-model="tourEmail" readonly class="w-full text-sm font-medium px-5 py-4 bg-slate-100 border border-slate-200 rounded-xl text-slate-500 cursor-not-allowed focus:outline-hidden">
                             </div>
-
-                            {{-- INPUT WHATSAPP (READONLY) --}}
                             <div class="space-y-2">
                                 <label class="text-xs font-black text-slate-900 uppercase tracking-widest">No. WhatsApp</label>
                                 <input type="tel" x-model="tourPhone" readonly class="w-full text-sm font-medium px-5 py-4 bg-slate-100 border border-slate-200 rounded-xl text-slate-500 cursor-not-allowed focus:outline-hidden">
@@ -149,7 +144,7 @@
                                 </div>
                                 <div class="space-y-2">
                                     <label class="text-xs font-black text-slate-900 uppercase tracking-widest flex items-center gap-1">Total Peserta (Pax) <span class="text-rose-600">*</span></label>
-                                    <input type="number" x-model="totalPax" min="{{ $package->min_pax ?? 2 }}" class="w-full text-sm font-medium px-5 py-4 bg-white border rounded-xl focus:outline-hidden focus:ring-4 transition-all text-slate-900" :class="totalPax ? 'border-slate-300 focus:border-sky-600 focus:ring-sky-100' : 'border-rose-400 focus:border-rose-600 focus:ring-rose-100 bg-rose-50/20'">
+                                    <input type="number" x-model.number="totalPax" min="{{ $package->min_pax ?? 2 }}" class="w-full text-sm font-medium px-5 py-4 bg-white border rounded-xl focus:outline-hidden focus:ring-4 transition-all text-slate-900" :class="totalPax ? 'border-slate-300 focus:border-sky-600 focus:ring-sky-100' : 'border-rose-400 focus:border-rose-600 focus:ring-rose-100 bg-rose-50/20'">
                                 </div>
                             </div>
                         </div>
@@ -168,7 +163,7 @@
                         </div>
                     </div>
 
-                    {{-- ==================== STEP 2: SUMMARY ==================== --}}
+                    {{-- STEP 2: SUMMARY --}}
                     <div x-show="step === 2" x-cloak x-transition:enter="transition ease-out duration-100" class="space-y-8">
                         <div class="flex items-center gap-4 border-l-4 border-sky-600 pl-4 mb-8">
                             <i class="fas fa-file-invoice-dollar text-2xl text-sky-600"></i>
@@ -222,7 +217,7 @@
                         </div>
                     </div>
 
-                    {{-- ==================== STEP 3: STATUS & RESI REAL-TIME ==================== --}}
+                    {{-- STEP 3: STATUS & RESI REAL-TIME --}}
                     <div x-show="step === 3" x-cloak x-transition:enter="transition ease-out duration-100" class="space-y-10">
                         
                         {{-- KONDISI PENDING --}}
@@ -236,7 +231,7 @@
                             </div>
                         </div>
 
-                        {{-- KONDISI SUCCESS (RESI SIAP CETAK) --}}
+                        {{-- KONDISI SUCCESS --}}
                         <div x-show="bookingStatus === 'success'" class="space-y-4 -mt-6">
                             <div class="text-center max-w-md mx-auto space-y-4 no-print">
                                 <div class="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-md border-4 border-white">
@@ -248,7 +243,7 @@
                                 </div>
                             </div>
 
-                            {{-- DOKUMEN KWITANSI RESMI (ID Dipindahkan ke Sini Agar Hanya Area Ini yang Dicetak) --}}
+                            {{-- DOKUMEN KWITANSI RESMI --}}
                             <div id="printable-receipt" class="border border-slate-200 rounded-2xl p-6 md:p-8 bg-slate-50/50 space-y-6">
                                 <div class="flex justify-between items-start border-b border-slate-200 pb-4">
                                     <div>
@@ -282,8 +277,6 @@
 
                         {{-- TOMBOL NAVIGATION DAN UNDUH --}}
                         <div class="pt-10 border-t border-slate-200 flex flex-wrap justify-center gap-4 no-print">
-                            
-                            {{-- Membuka route print tiket dengan ID dinamis dari data Alpine.js --}}
                             <button type="button" 
                                     @click="const win = window.open('/reservations/' + orderId + '/download-ticket', '_blank'); win.focus();" 
                                     class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-4 px-8 rounded-xl transition-all shadow-md flex items-center gap-2 cursor-pointer">
@@ -307,20 +300,21 @@
 function bookingSystem() {
     return {
         step: {{ request()->has("status") && request()->get("status") === "success" ? 3 : 1 }}, 
-        tourName: '{{ old('name', auth()->user()->name ?? '') }}',
-        tourEmail: '{{ old('email', auth()->user()->email ?? '') }}',
-        tourPhone: '{{ old('phone', auth()->user()->phone ?? auth()->user()->no_hp ?? '') }}',
         
-        tourDate: '{{ $booking ? $booking->travel_date : '' }}', 
-        totalPax: {{ $booking ? $booking->quantity : ($package->min_pax ?? 2) }}, // Menjadi Number
-        basePrice: {{ $package->price }},
+        tourName: @json(old('name', auth()->user()->name ?? '')),
+        tourEmail: @json(old('email', auth()->user()->email ?? '')),
+        tourPhone: @json(old('phone', auth()->user()->phone ?? auth()->user()->no_hp ?? '')),
         
-        snapToken: '{{ $booking ? $booking->snap_token : '' }}',
-        orderId: '{{ $booking ? $booking->order_id : '' }}',
-        bookingStatus: '{{ $booking ? $booking->status : 'pending' }}',
+        tourDate: @json($booking ? $booking->travel_date : ''), 
+        totalPax: {{ (int) ($booking ? $booking->quantity : ($package->min_pax ?? 2)) }},
+        basePrice: {{ (float) $package->price }},
+        
+        snapToken: @json($booking ? $booking->snap_token : ''),
+        orderId: @json($booking ? $booking->order_id : ''),
+        bookingStatus: @json($booking ? $booking->status : 'pending'),
+        
         isProcessing: false,
         specialRequest: '',
-
         pencetLanjut: false,
 
         get totalPrice() {
@@ -329,7 +323,6 @@ function bookingSystem() {
 
         getTodayDate() {
             const today = new Date();
-        
             today.setDate(today.getDate() + 1);
             
             const yyyy = today.getFullYear();
@@ -339,13 +332,11 @@ function bookingSystem() {
             return `${yyyy}-${mm}-${dd}`;
         },
 
-        // Fungsi inisialisasi yang dipanggil via x-init secara aman
         initSystem() {
             const urlParams = new URLSearchParams(window.location.search);
             const urlStatus = urlParams.get('status');
             const urlOrderId = urlParams.get('order_id');
 
-            // Jika status sukses dari redirect, paksa step ke halaman kwitansi (step 3)
             if (urlStatus === 'success') {
                 this.step = 3;
                 this.bookingStatus = 'success';
@@ -355,14 +346,12 @@ function bookingSystem() {
                 this.orderId = urlOrderId;
             }
 
-            // Jalankan sinkronisasi status ke backend jika link redirect sukses dari Midtrans
             if (urlStatus === 'success' && this.orderId) {
                 this.cekStatusUrl();
             }
         },
 
         async dapatkanSnapToken() {
-            // Jika form belum diisi (tourDate kosong), jangan proses kirim ke backend
             if (!this.tourDate) {
                 alert('Silakan pilih tanggal tour terlebih dahulu.');
                 return;

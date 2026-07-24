@@ -5,7 +5,7 @@
         <div class="absolute bottom-0 right-10 w-64 h-64 bg-slate-800/50 rounded-full blur-3xl"></div>
     </div>
 
-    {{-- FLOATING CARD (Fixed: Menggunakan absolute top-0 untuk melayang sempurna tanpa merusak layout bawah) --}}
+    {{-- FLOATING CARD --}}
     <div class="absolute top-0 left-0 right-0 transform -translate-y-1/2 z-20">
         <div class="max-w-5xl mx-auto px-4 sm:px-6 md:px-8">
             <div class="bg-linear-to-r from-sky-600 to-sky-700 rounded-2xl p-5 md:py-8 md:px-10 shadow-2xl border border-sky-500/30 flex flex-col md:flex-row items-center justify-between gap-4 transition-all duration-300 hover:shadow-sky-600/10">
@@ -23,7 +23,7 @@
         </div>
     </div>
 
-    {{-- MAIN LAYER (Berikan pt-20 atau pt-24 agar teks menu tidak tertabrak kartu melayang) --}}
+    {{-- MAIN LAYER --}}
     <div class="max-w-6xl mx-auto px-4 sm:px-6 md:px-12 lg:px-16 pb-8 pt-20 md:pt-24 relative z-10">
         
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 pb-8 border-b border-slate-800">

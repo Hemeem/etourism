@@ -59,10 +59,9 @@
         @endauth
     </div>
 
-    {{-- TOMBOL HAMBURGER MOBILE (HIDDEN DI DESKTOP - FLEX DI MOBILE) --}}
+    {{-- TOMBOL HAMBURGER MOBILE --}}
     <div class="items-center" style="display: var(--hamburger-display, none);">
         <style>
-            /* Jika layar di bawah 768px (Mobile), tampilkan flex. Jika di atas, biarkan none */
             @media (max-width: 767px) {
                 div[style*="--hamburger-display"] { --hamburger-display: flex !important; }
             }
@@ -109,7 +108,7 @@
                     </button>
                 </div>
 
-                {{-- NAV LINK VERTIKAL (Menggunakan Blade Directive @class) --}}
+                {{-- NAV LINK VERTIKAL --}}
                 <div class="flex flex-col gap-1.5">
                     <a href="{{ url('/') }}" @class(['block text-sm font-semibold p-3 rounded-xl transition-colors', 'bg-sky-50 text-sky-700' => request()->is('/') || request()->is('home'), 'text-slate-700 hover:bg-slate-50' => !(request()->is('/') || request()->is('home'))])>
                         <i class="fas fa-home w-5 text-center opacity-70 mr-1.5"></i> Beranda

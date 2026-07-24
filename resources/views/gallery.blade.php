@@ -3,7 +3,7 @@
 @section('title', 'Galeri Keindahan Pulau Belitung - Travel Belitung Begaye')
 
 @section('content')
-{{-- MENAMBAHKAN GLOBAL X-DATA UNTUK LIGHTBOX DAN NAVIGASI INTERAKTIF --}}
+{{-- GLOBAL X-DATA UNTUK LIGHTBOX DAN NAVIGASI INTERAKTIF --}}
 <div class="min-h-screen bg-linear-to-b from-slate-50 via-white to-sky-50/20 pb-24"
      x-data="{ 
         openLightbox: false, 
@@ -65,36 +65,37 @@
             <div class="columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-6 space-y-6">
                 @foreach($photos as $photo)
                     @php
-                        // Decode JSON gambar dari database menjadi array PHP
-                        $imagesArray = json_decode($photo->image, true) ?? [];
-                        
-                        // Siapkan array baru berisikan format string data URI base64 lengkap untuk dibaca JavaScript/Alpine
+                        $imagesArray = is_array($photo->image) ? $photo->image : (json_decode($photo->image, true) ?? []);
                         $formattedImages = array_map(function($img) {
+                            if (str_starts_with($img, 'http') || str_starts_with($img, 'data:') || str_starts_with($img, 'storage/')) {
+                                return asset($img);
+                            }
                             return 'data:image/jpeg;base64,' . $img;
                         }, $imagesArray);
 
                         $coverImage = !empty($formattedImages) ? $formattedImages[0] : 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=600&q=80';
                     @endphp
 
-                    {{-- KARTU UTAMA ALBUM --}}
-                    {{-- JSON_HEX_APOS digunakan agar string base64 aman saat di-convert menjadi parameter Alpine.js --}}
-                    <div @click="openLightbox = true; activeImages = {{ json_encode($formattedImages, JSON_HEX_APOS) }}; activeIndex = 0; activeTitle = '{{ $photo->title }}'; activeCategory = '{{ $photo->filter_category }}'"
+                    <div @click="openLightbox = true; 
+                                activeImages = @json($formattedImages); 
+                                activeIndex = 0; 
+                                activeTitle = @json($photo->title); 
+                                activeCategory = @json($photo->filter_category)"
                          class="break-inside-avoid bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden group relative hover:shadow-xl transition-all duration-300 cursor-pointer">
                         
                         <div class="overflow-hidden bg-slate-900 relative">
-                            {{-- Render Cover --}}
                             <img src="{{ $coverImage }}" 
                                  alt="{{ $photo->title }}" 
-                                 class="w-full h-auto object-cover group-hover:scale-104 transition-transform duration-700 opacity-95">
-                            
-                            {{-- INDIKATOR TOTAL FOTO --}}
+                                 loading="lazy"
+                                 class="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-700 opacity-95">
+                        
                             @if(count($formattedImages) > 1)
                                 <span class="absolute top-3 left-3 bg-slate-900/75 backdrop-blur-md text-white text-[9px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wider z-10 shadow-sm">
                                     <i class="fas fa-images mr-1 text-sky-400"></i> {{ count($formattedImages) }} Foto
                                 </span>
                             @endif
 
-                            {{-- OVERLAY INFORMASI KETIKA KURSOR DIATAS GAMBAR (DESKTOP) --}}
+                            {{-- OVERLAY INFORMASI --}}
                             <div class="absolute inset-0 bg-linear-to-t from-slate-950 via-slate-950/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-5">
                                 <span class="text-[9px] font-black text-sky-400 uppercase tracking-widest block mb-1">
                                     {{ $photo->filter_category }}
@@ -108,8 +109,6 @@
                                 </div>
                             </div>
                         </div>
-
-                        {{-- TAMPILAN TEXT KHUSUS LAYAR KECIL (MOBILE) --}}
                         <div class="p-4 group-hover:hidden block sm:hidden">
                             <span class="text-[9px] font-bold text-sky-600 uppercase tracking-wide">{{ $photo->filter_category }}</span>
                             <h4 class="font-bold text-xs text-slate-950 mt-0.5 truncate">{{ $photo->title }}</h4>
@@ -130,13 +129,18 @@
 
     </div>
 
-    {{-- INTERAKSI MODAL LIGHTBOX POPUP DENGAN TOMBOL NAVIGASI NEXT & PREV --}}
+    {{-- INTERAKSI MODAL LIGHTBOX POPUP --}}
     <div x-show="openLightbox" 
          class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-slate-950/95 backdrop-blur-md p-4 transition-all"
          @keydown.window.escape="openLightbox = false"
          @keydown.window.arrow-right="next()"
          @keydown.window.arrow-left="prev()"
-         x-transition
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
          x-cloak>
         
         {{-- Tombol Close --}}
@@ -148,7 +152,7 @@
         {{-- AREA UTAMA GAMBAR DAN TOMBOL GESER --}}
         <div class="relative w-full max-w-4xl max-h-[75vh] flex items-center justify-center group/modal">
             
-            {{-- TOMBOL GESER KIRI (PREV) - Muncul jika foto dalam album lebih dari 1 --}}
+            {{-- TOMBOL GESER KIRI (PREV) --}}
             <template x-if="activeImages.length > 1">
                 <button @click="prev()" 
                         class="absolute left-4 z-50 bg-slate-900/50 hover:bg-slate-900 text-white w-10 h-10 rounded-full flex items-center justify-center border border-white/10 transition-all cursor-pointer shadow-lg">
@@ -156,12 +160,12 @@
                 </button>
             </template>
 
-            {{-- ELEMEN GAMBAR AKTIF BERDASARKAN INDEX --}}
+            {{-- ELEMEN GAMBAR AKTIF --}}
             <div class="overflow-hidden rounded-2xl shadow-2xl border border-white/5 bg-slate-900/40">
                 <img :src="activeImages[activeIndex]" :alt="activeTitle" class="w-full h-full max-h-[75vh] object-contain transition-all duration-300">
             </div>
 
-            {{-- TOMBOL GESER KANAN (NEXT) - Muncul jika foto dalam album lebih dari 1 --}}
+            {{-- TOMBOL GESER KANAN (NEXT) --}}
             <template x-if="activeImages.length > 1">
                 <button @click="next()" 
                         class="absolute right-4 z-50 bg-slate-900/50 hover:bg-slate-900 text-white w-10 h-10 rounded-full flex items-center justify-center border border-white/10 transition-all cursor-pointer shadow-lg">
@@ -170,12 +174,11 @@
             </template>
         </div>
 
-        {{-- INFORMASI METADATA & INDIKATOR HALAMAN (MISAL: 1 / 3) --}}
+        {{-- INFORMASI METADATA & INDIKATOR --}}
         <div class="text-center mt-6 max-w-xl space-y-1">
             <span x-text="activeCategory" class="text-[10px] font-black text-sky-400 uppercase tracking-widest block"></span>
             <h3 x-text="activeTitle" class="text-sm md:text-base font-bold text-white tracking-tight leading-snug"></h3>
             
-            {{-- Angka Indikator Posisi Gambar --}}
             <template x-if="activeImages.length > 1">
                 <p class="text-[10px] text-slate-400/80 font-bold tracking-wider pt-1 uppercase">
                     Foto <span x-text="activeIndex + 1" class="text-sky-400"></span> dari <span x-text="activeImages.length"></span>

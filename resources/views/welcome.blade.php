@@ -36,39 +36,50 @@
 
             <div class="lg:col-span-7 order-1 lg:order-2 w-full relative">
                 <div class="grid grid-cols-3 gap-3 sm:gap-4 md:gap-5 items-center w-full">
+                    @php
+                        $getPhotoSrc = function($index) use ($photos) {
+                            if (isset($photos[$index])) {
+                                $imagesArray = json_decode($photos[$index]->image, true) ?? [];
+                                if (!empty($imagesArray)) {
+                                    return 'data:image/jpeg;base64,' . $imagesArray[0];
+                                }   
+                            }
+                            // Fallback default image jika index belum ada data
+                            return 'https://images.unsplash.com/photo-1544644181-1484b3fdfc62?auto=format&fit=crop&w=600&q=80';
+                        };
+
+                        $getPhotoTitle = function($index) use ($photos) {
+                            return isset($photos[$index]) ? $photos[$index]->title : 'Wisata Belitung';
+                        };
+                    @endphp
+
+                    {{-- Kolom 1 --}}
                     <div class="space-y-3 sm:space-y-4 md:space-y-5">
-                        <div
-                            class="rounded-3xl sm:rounded-4xl overflow-hidden shadow-xl aspect-3/4 w-full bg-slate-100">
-                            <img src="https://images.unsplash.com/photo-1544644181-1484b3fdfc62?auto=format&fit=crop&w=600&q=80"
-                                class="w-full h-full object-cover" alt="Pantai Tanjung Tinggi">
+                        <div class="rounded-3xl sm:rounded-4xl overflow-hidden shadow-xl aspect-3/4 w-full bg-slate-100">
+                            <img src="{{ $getPhotoSrc(0) }}" class="w-full h-full object-cover" alt="{{ $getPhotoTitle(0) }}">
                         </div>
-                        <div
-                            class="rounded-3xl sm:rounded-4xl overflow-hidden shadow-xl aspect-square w-full bg-slate-100">
-                            <img src="https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=600&q=80"
-                                class="w-full h-full object-cover" alt="Pulau Lengkuas">
+                        <div class="rounded-3xl sm:rounded-4xl overflow-hidden shadow-xl aspect-square w-full bg-slate-100">
+                            <img src="{{ $getPhotoSrc(1) }}" class="w-full h-full object-cover" alt="{{ $getPhotoTitle(1) }}">
                         </div>
                     </div>
 
+                    {{-- Kolom 2 --}}
                     <div class="space-y-3 sm:space-y-4 md:space-y-5 pt-6 sm:pt-10 lg:pt-12">
-                        <div
-                            class="rounded-3xl sm:rounded-4xl overflow-hidden shadow-xl aspect-square w-full bg-slate-100">
-                            <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=600&q=80"
-                                class="w-full h-full object-cover" alt="Pantai Belitung">
+                        <div class="rounded-3xl sm:rounded-4xl overflow-hidden shadow-xl aspect-square w-full bg-slate-100">
+                            <img src="{{ $getPhotoSrc(2) }}" class="w-full h-full object-cover" alt="{{ $getPhotoTitle(2) }}">
                         </div>
-                        <div
-                            class="rounded-3xl sm:rounded-4xl overflow-hidden shadow-xl aspect-3/4 w-full bg-slate-100">
-                            <img src="https://images.unsplash.com/photo-1506929562872-bb421503ef21?auto=format&fit=crop&w=600&q=80"
-                                class="w-full h-full object-cover" alt="Aktivitas Wisata">
+                        <div class="rounded-3xl sm:rounded-4xl overflow-hidden shadow-xl aspect-3/4 w-full bg-slate-100">
+                            <img src="{{ $getPhotoSrc(3) }}" class="w-full h-full object-cover" alt="{{ $getPhotoTitle(3) }}">
                         </div>
                     </div>
 
+                    {{-- Kolom 3 --}}
                     <div class="self-center">
-                        <div
-                            class="rounded-3xl sm:rounded-4xl overflow-hidden shadow-xl aspect-9/16 w-full bg-slate-100">
-                            <img src="https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=600&q=80"
-                                class="w-full h-full object-cover" alt="Batu Granit Belitung">
+                        <div class="rounded-3xl sm:rounded-4xl overflow-hidden shadow-xl aspect-9/16 w-full bg-slate-100">
+                            <img src="{{ $getPhotoSrc(4) }}" class="w-full h-full object-cover" alt="{{ $getPhotoTitle(4) }}">
                         </div>
                     </div>
+
                 </div>
 
                 <div
